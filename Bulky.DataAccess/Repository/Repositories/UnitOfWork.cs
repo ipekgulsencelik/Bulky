@@ -8,11 +8,13 @@ namespace Bulky.DataAccess.Repository.Repositories
         private readonly BulkyContext _db;
 
         public ICategoryRepository Categories { get; }
+        public IProductRepository Products { get; }
 
-        public UnitOfWork(BulkyContext db, ICategoryRepository categoryRepository)
+        public UnitOfWork(BulkyContext db, ICategoryRepository categoryRepository, IProductRepository productRepository)
         {
             _db = db;
-            Categories = categoryRepository; 
+            Categories = categoryRepository;
+            Products = productRepository;
         }
 
         public async Task CommitAsync()

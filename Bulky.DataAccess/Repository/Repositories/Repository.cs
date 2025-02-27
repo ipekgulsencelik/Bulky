@@ -14,9 +14,10 @@ namespace Bulky.DataAccess.Repository.Repositories
         {
             _context = context;
             _dbSet = _context.Set<T>();
+            _context.Products.Include(x => x.Category).Include(u => u.CategoryId);
         }
 
-        public async Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>>? filter = null, IEnumerable<string>? includeProperties = null)
+        public async Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>>? filter = null, string? includeProperties = null)
         {
             IQueryable<T> query = _dbSet;
 
@@ -25,9 +26,10 @@ namespace Bulky.DataAccess.Repository.Repositories
                 query = query.Where(filter);
             }
 
-            if (includeProperties != null)
+            if (!string.IsNullOrEmpty(includeProperties))
             {
-                foreach (var includeProp in includeProperties)
+                foreach (var includeProp in includeProperties
+                    .Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
                 {
                     query = query.Include(includeProp);
                 }
@@ -36,13 +38,14 @@ namespace Bulky.DataAccess.Repository.Repositories
             return await query.ToListAsync();
         }
 
-        public async Task<T?> GetAsync(Expression<Func<T, bool>> filter, IEnumerable<string>? includeProperties = null)
+        public async Task<T?> GetAsync(Expression<Func<T, bool>> filter, string? includeProperties = null)
         {
             IQueryable<T> query = _dbSet.Where(filter);
 
-            if (includeProperties != null)
+            if (!string.IsNullOrEmpty(includeProperties))
             {
-                foreach (var includeProp in includeProperties)
+                foreach (var includeProp in includeProperties
+                    .Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
                 {
                     query = query.Include(includeProp);
                 }
