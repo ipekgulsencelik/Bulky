@@ -105,38 +105,7 @@ namespace Bulky.UI.Areas.Admin.Controllers
             }
         }
 
-        public IActionResult DeleteProduct(int? id)
-        {
-            if (id == null || id == 0)
-            {
-                return NotFound();
-            }
-
-            Product? productFromDb = _unitOfWork.Products.GetAsync(x => x.Id == id).Result;
-
-            if (productFromDb == null)
-            {
-                return NotFound();
-            }
-            return View(productFromDb);
-        }
-
-        [HttpPost, ActionName("DeleteProduct")]
-        public IActionResult DeletePOST(int? id)
-        {
-            Product? obj = _unitOfWork.Products.GetAsync(x => x.Id == id).Result;
-            if (obj == null)
-            {
-                return NotFound();
-            }
-            _unitOfWork.Products.Remove(obj);
-            _unitOfWork.CommitAsync();
-            TempData["success"] = "Product Deleted Successfully.";
-            return RedirectToAction("Index");
-        }
-
         #region API CALLS
-
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -144,6 +113,27 @@ namespace Bulky.UI.Areas.Admin.Controllers
             return Json(new { data = objProductList });
         }
 
+        [HttpDelete]
+        public async Task<IActionResult> Delete(int? id)
+        {
+            var productToBeDeleted = await _unitOfWork.Products.GetAsync(x => x.Id == id);
+            if (productToBeDeleted == null)
+            {
+                return Json(new { success = false, message = "Error while deleting" });
+            }
+
+            var oldImagePath = Path.Combine(_webHostEnvironment.WebRootPath, productToBeDeleted.ImageUrl.TrimStart('\\'));
+
+            if (System.IO.File.Exists(oldImagePath))
+            {
+                System.IO.File.Delete(oldImagePath);
+            }
+
+            _unitOfWork.Products.Remove(productToBeDeleted);
+            _unitOfWork.CommitAsync();
+
+            return Json(new { success = true, message = "Delete Successful" });
+        }
         #endregion
     }
 }
