@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Bulky.UI.Areas.Admin.Controllers
 {
     [Area("Admin")]
-    [Authorize(Roles = ApplicationRole.Role_Admin)]
+    //[Authorize(Roles = ApplicationRole.Role_Admin)]
     public class CategoryController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;
