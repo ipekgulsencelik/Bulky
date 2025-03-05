@@ -10,13 +10,15 @@ namespace Bulky.DataAccess.Repository.Repositories
         public ICategoryRepository Categories { get; }
         public IProductRepository Products { get; }
         public ICompanyRepository Companies { get; }
+        public IShoppingCartRepository ShoppingCarts { get; }
 
-        public UnitOfWork(BulkyContext db, ICategoryRepository categoryRepository, IProductRepository productRepository, ICompanyRepository companyRepository)
+        public UnitOfWork(BulkyContext db, ICategoryRepository categoryRepository, IProductRepository productRepository, ICompanyRepository companyRepository, IShoppingCartRepository shoppingCartRepository)
         {
             _db = db;
             Categories = categoryRepository;
             Products = productRepository;
             Companies = companyRepository;
+            ShoppingCarts = shoppingCartRepository;
         }
 
         public async Task CommitAsync()

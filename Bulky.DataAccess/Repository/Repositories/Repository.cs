@@ -38,15 +38,26 @@ namespace Bulky.DataAccess.Repository.Repositories
             return await query.ToListAsync();
         }
 
-        public async Task<T?> GetAsync(Expression<Func<T, bool>> filter, string? includeProperties = null)
+        public async Task<T?> GetAsync(Expression<Func<T, bool>> filter, string? includeProperties = null, bool tracked = false)
         {
-            IQueryable<T> query = _dbSet.Where(filter);
+            IQueryable<T> query;
+            if (tracked)
+            {
+                query = _dbSet;
+
+            }
+            else
+            {
+                query = _dbSet.AsNoTracking();
+            }
+
+            query = _dbSet.Where(filter);
 
             if (!string.IsNullOrEmpty(includeProperties))
             {
                 foreach (var includeProp in includeProperties
                     .Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
-                {
+                    {
                     query = query.Include(includeProp);
                 }
             }

@@ -1,9 +1,10 @@
 using Bulky.DataAccess.Repository.IRepositories;
 using Bulky.Entity.Entities;
 using Bulky.UI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 using System.Diagnostics;
+using System.Security.Claims;
 
 namespace Bulky.UI.Areas.Customer.Controllers
 {
@@ -27,8 +28,42 @@ namespace Bulky.UI.Areas.Customer.Controllers
 
         public async Task<IActionResult> Details(int productId)
         {
-            Product product = await _unitOfWork.Products.GetAsync(x => x.Id == productId, includeProperties: "Category");
-            return View(product);
+            ShoppingCart cart = new()
+            {
+                Product = await _unitOfWork.Products.GetAsync(x => x.Id == productId, includeProperties: "Category"),
+                Count = 1,
+                ProductId = productId
+            };
+            return View(cart);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> Details(ShoppingCart shoppingCart)
+        {
+            var claimsIdentity = (ClaimsIdentity)User.Identity;
+            var userId = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier).Value;
+            shoppingCart.ApplicationUserId = userId;
+
+            ShoppingCart cartFromDb = await _unitOfWork.ShoppingCarts.GetAsync(x => x.ApplicationUserId == userId && x.ProductId == shoppingCart.ProductId);
+
+            if (cartFromDb != null)
+            {
+                //shopping cart exists
+                cartFromDb.Count += shoppingCart.Count;
+                _unitOfWork.ShoppingCarts.Update(cartFromDb);
+            }
+            else
+            {
+                //add cart record
+                await _unitOfWork.ShoppingCarts.AddAsync(shoppingCart);
+            }
+
+            TempData["success"] = "Cart updated successfully";
+
+            _unitOfWork.CommitAsync();
+
+            return RedirectToAction(nameof(Index));
         }
 
         public IActionResult Privacy()
