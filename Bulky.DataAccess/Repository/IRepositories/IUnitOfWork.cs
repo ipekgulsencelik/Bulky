@@ -6,6 +6,9 @@
         IProductRepository Products { get; }
         ICompanyRepository Companies { get; }
         IShoppingCartRepository ShoppingCarts { get; }
+        IApplicationUserRepository ApplicationUsers { get; }
+        IOrderDetailRepository OrderDetails { get; }
+        IOrderRepository Orders { get; }
 
         Task CommitAsync();
     }
