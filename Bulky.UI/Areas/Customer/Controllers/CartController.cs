@@ -108,8 +108,8 @@ namespace Bulky.UI.Areas.Customer.Controllers
                 shoppingCartViewModel.Order.OrderStatus = OrderStatus.StatusApproved;
             }
 
-            _unitOfWork.Orders.AddAsync(shoppingCartViewModel.Order);
-            _unitOfWork.CommitAsync();
+            await _unitOfWork.Orders.AddAsync(shoppingCartViewModel.Order);
+            await _unitOfWork.CommitAsync();
 
             foreach (var cart in shoppingCartViewModel.ShoppingCartList)
             {
@@ -120,9 +120,9 @@ namespace Bulky.UI.Areas.Customer.Controllers
                     Price = cart.Price,
                     Count = cart.Count
                 };
-                _unitOfWork.OrderDetails.AddAsync(orderDetail);
-                _unitOfWork.CommitAsync();
+                await _unitOfWork.OrderDetails.AddAsync(orderDetail);
             }
+            await _unitOfWork.CommitAsync();
 
             if (applicationUser.CompanyId.GetValueOrDefault() == 0)
             {
@@ -180,8 +180,9 @@ namespace Bulky.UI.Areas.Customer.Controllers
                 {
                     _unitOfWork.Orders.UpdateStripePaymentID(id, session.Id, session.PaymentIntentId);
                     _unitOfWork.Orders.UpdateStatus(id, OrderStatus.StatusApproved, PaymentStatus.PaymentStatusApproved);
-                    _unitOfWork.CommitAsync();
+                    await _unitOfWork.CommitAsync();
                 }
+                HttpContext.Session.Clear();
             }
 
             List<ShoppingCart> shoppingCarts = (List<ShoppingCart>)await _unitOfWork.ShoppingCarts
@@ -203,10 +204,12 @@ namespace Bulky.UI.Areas.Customer.Controllers
 
         public async Task<IActionResult> Minus(int cartId)
         {
-            var cartFromDb = await _unitOfWork.ShoppingCarts.GetAsync(x => x.Id == cartId);
+            var cartFromDb = await _unitOfWork.ShoppingCarts.GetAsync(x => x.Id == cartId, tracked: true);
             if (cartFromDb.Count <= 1)
             {
                 //remove that from cart
+                HttpContext.Session.SetInt32(ApplicationRole.SessionCart, (await _unitOfWork.ShoppingCarts
+                    .GetAllAsync(x => x.ApplicationUserId == cartFromDb.ApplicationUserId)).Count() - 1);
                 _unitOfWork.ShoppingCarts.Remove(cartFromDb);
             }
             else
@@ -221,7 +224,9 @@ namespace Bulky.UI.Areas.Customer.Controllers
 
         public async Task<IActionResult> Remove(int cartId)
         {
-            var cartFromDb = await _unitOfWork.ShoppingCarts.GetAsync(x => x.Id == cartId);
+            var cartFromDb = await _unitOfWork.ShoppingCarts.GetAsync(x => x.Id == cartId, tracked: true);
+            HttpContext.Session.SetInt32(ApplicationRole.SessionCart, (await _unitOfWork.ShoppingCarts
+                    .GetAllAsync(x => x.ApplicationUserId == cartFromDb.ApplicationUserId)).Count() - 1);
             _unitOfWork.ShoppingCarts.Remove(cartFromDb);
             _unitOfWork.CommitAsync();
             return RedirectToAction(nameof(Index));

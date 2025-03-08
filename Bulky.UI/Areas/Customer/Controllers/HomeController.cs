@@ -1,6 +1,7 @@
 using Bulky.DataAccess.Repository.IRepositories;
 using Bulky.Entity.Entities;
 using Bulky.UI.Models;
+using Bulky.Utility;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
@@ -22,7 +23,7 @@ namespace Bulky.UI.Areas.Customer.Controllers
 
         public async Task<IActionResult> Index()
         {
-             IEnumerable<Product> productList = await _unitOfWork.Products.GetAllAsync(includeProperties: "Category");
+            IEnumerable<Product> productList = await _unitOfWork.Products.GetAllAsync(includeProperties: "Category");
             return View(productList);
         }
 
@@ -52,17 +53,18 @@ namespace Bulky.UI.Areas.Customer.Controllers
                 //shopping cart exists
                 cartFromDb.Count += shoppingCart.Count;
                 _unitOfWork.ShoppingCarts.Update(cartFromDb);
+                _unitOfWork.CommitAsync();
             }
             else
             {
                 //add cart record
                 await _unitOfWork.ShoppingCarts.AddAsync(shoppingCart);
+                _unitOfWork.CommitAsync();
+                HttpContext.Session.SetInt32(ApplicationRole.SessionCart,
+                (await _unitOfWork.ShoppingCarts.GetAllAsync(x => x.ApplicationUserId == userId)).Count());
             }
 
-            TempData["success"] = "Cart updated successfully";
-
-            _unitOfWork.CommitAsync();
-
+            TempData["success"] = "Cart Updated Successfully";
             return RedirectToAction(nameof(Index));
         }
 
